@@ -12,9 +12,9 @@ api_secret = os.getenv("API_SECRET")
 t = Twitter(auth=OAuth(access_token, access_token_secret, api_key, api_secret))
 
 def main_process():
-    now_time = datetime.now().strftime("%Y年%m月%d日 %H時%M分%S秒")
+    now_time = datetime.now().strftime("%Y年%m月%d日")
     tweet_text = f"【定期実行】\n" \
-                 f"{now_time}です。\n" \
+                 f"{now_time}になりました。\n" \
                  f"あけましておめでとうございます。\n" \
                  f"本年もどうぞよろしくお願いします。"
     t.statuses.update(status=tweet_text)
