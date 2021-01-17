@@ -22,8 +22,9 @@
 
 2021/01/01(金)
 23:30	Conversation Partner	年が変わります。
-23:31	myself	"了解
-です"
+23:31	myself	"空行があります
+
+空行があります"
 
 2021/01/02(土)
 12:27	Conversation Partner	着信テスト

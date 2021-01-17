@@ -1,4 +1,4 @@
-import glob, re
+import glob, re, sys
 from pprint import pprint
 import datetime
 from collections import defaultdict
@@ -46,6 +46,8 @@ class TalkOneDay:
         talker = None
         for talk in talk_history_one_day.split("\n"):
             if conversation_flg:
+                if len(talk) == 0:
+                    continue
                 if talk[-1] == '\"':
                     conversation_flg = False
                 self.strTalkerCount[talker] += len(talk) - 1
@@ -75,8 +77,23 @@ class TalkData:
         self._extract_talk_data()
 
     def _get_talk_data(self):
-        with open(self.talk_path, "r") as f:
-            self.talk_data = f.read().strip().split("\n\n")
+        with open(self.talk_path, "r", encoding="utf-8-sig") as f:
+            talk_data = f.read().strip().split("\n\n")
+        self.talk_data = ["" for _ in range(len(talk_data))]
+        self.talk_data[0] = talk_data[0]
+
+        now_idx = 0
+        date_pattern = re.compile(r"[0-9]{4}/[0-9]{2}/[0-9]{2}\(.\)")
+        for i in range(1, len(talk_data)):
+            first_data = talk_data[i][:13]
+            if date_pattern.match(first_data):
+                now_idx += 1
+            else:
+                self.talk_data[now_idx] += "\n\n"
+
+            self.talk_data[now_idx] += talk_data[i]
+
+        self.talk_data = self.talk_data[:now_idx + 1]
 
     def _extract_talk_data(self):
         head_data = self.talk_data[0].split("\n")
