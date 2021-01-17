@@ -33,3 +33,11 @@
 14:05	myself	☎ 通話時間 0:21
 15:27	Conversation Partner	LINE Payを送ります
 Conversation Partnerが1,130 円相当のLINE Pay残高またはボーナスを送りました。
+
+2021/01/03(日)
+12:27	Conversation Partner	着信テスト
+12:27	myself	不在着信からの通話
+14:05	Conversation Partner	☎ 不在着信
+14:05	myself	☎ 通話時間 56:02:58
+15:27	myself	LINE Payを送ります
+Conversation Partnerが11,999 円相当のLINE Pay残高またはボーナスを送りました。
