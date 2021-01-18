@@ -3,23 +3,42 @@ from pprint import pprint
 import datetime
 from collections import defaultdict
 
-PartnerTalkData = "test_talk.txt"
+PartnerTalkData = "なっつん.txt"
 
+time_pattern = re.compile(r"[0-9]{2}:[0-9]{2}")
+line_pay_pattern = re.compile(r"(.*?)が(.*?) 円相当のLINE Pay残高またはボーナスを送りました。$")
+date_pattern = re.compile(r"[0-9]{4}/[0-9]{2}/[0-9]{2}\(.\)")
 
 
 class TimeData:
     def __init__(self):
-        self.hour = 0
-        self.minute = 0
-        self.second = 0
+        self.year, self.month, self.day = 0, 0, 0
+        self.hour, self.minute, self.second = 0, 0, 0
 
     def add_time(self, hour, minute, second):
         self.second, kuriagari = (int(self.second) + second) % 60, (int(self.second) + second) // 60
-        self.minute, kuriagari = (int(self.minute) + minute + kuriagari) % 60, (int(self.minute) + minute + kuriagari) // 60
+        self.minute, kuriagari = (int(self.minute) + minute + kuriagari) % 60, (
+                int(self.minute) + minute + kuriagari) // 60
         self.hour = int(self.hour) + hour + kuriagari
 
     def display_time(self):
         return f"{str(self.hour).zfill(2)}:{str(self.minute).zfill(2)}:{str(self.second).zfill(2)}"
+
+    def set_day(self, date_data):
+        self.year, self.month, self.day = map(int, date_data.split("/"))
+
+    def set_time(self, talk_day):
+        self.hour, self.minute = map(int, talk_day.split(":"))
+
+    def display_day(self):
+        return f"{str(self.year)}/{str(self.month).zfill(2)}/{str(self.day).zfill(2)}"
+
+
+def calc_day_elapsed(start_day: TimeData, save_day: TimeData):
+    dt_start = datetime.datetime(year=start_day.year, month=start_day.month, day=start_day.day)
+    dt_save = datetime.datetime(year=save_day.year, month=save_day.month, day=save_day.day)
+    return (dt_save - dt_start).days
+
 
 class Conversation:
     def __init__(self, date, talker):
@@ -29,6 +48,7 @@ class Conversation:
         self.talk_contents = None
         self.talk_contents_count = 0
         self.stamp_flg = False
+        self.picture_flg = False
         self.call_flg = False
         self.call_time = TimeData()
         self.line_pay_flg = False
@@ -53,21 +73,21 @@ class Conversation:
             self.call_time.add_time(hour, minute, second)
         elif contents == "[スタンプ]":
             self.stamp_flg = True
+        elif contents == "[写真]":
+            self.picture_flg = True
         else:
             self.talk = contents
             self.talk_contents_count = len(contents)
-
-time_pattern = re.compile(r"[0-9]{2}:[0-9]{2}")
-line_pay_pattern = re.compile(r"(.*?)が(.*?) 円相当のLINE Pay残高またはボーナスを送りました。$")
-date_pattern = re.compile(r"[0-9]{4}/[0-9]{2}/[0-9]{2}\(.\)")
 
 
 class TalkOneDay:
     def __init__(self, talk_history_one_day):
         date_str, talk_history_one_day = talk_history_one_day.split("\n", 1)
-        self.date = datetime.datetime.strptime(date_str[:-3], "%Y/%m/%d")
+        self.date = TimeData()
+        self.date.set_day(date_str[:-3])
         self._talk_analyse(talk_history_one_day)
         self._analyze_one_day()
+        self._sum_data()
 
     def _talk_analyse(self, talk_history_one_day):
 
@@ -75,6 +95,7 @@ class TalkOneDay:
         self.conversation_data = []
         sentence = ""
         talker = None
+        talk_day = None
 
         talk_history_one_day = talk_history_one_day.split("\n")
         for i, talk in enumerate(talk_history_one_day):
@@ -97,7 +118,7 @@ class TalkOneDay:
                     conversation.apply_line_pay(money)
                     self.conversation_data.append(conversation)
                     continue
-            elif talk.count("\t")  == 1:
+            elif talk.count("\t") == 1:
                 if talk.split("\t")[1] == "メッセージの送信を取り消しました":
                     continue
                 else:
@@ -111,7 +132,7 @@ class TalkOneDay:
                 else:
                     sentence += talk_contents
 
-            conversation = Conversation(self.date, talker)
+            conversation = Conversation(self.date.set_time(talk_day), talker)
             conversation.apply_contents(sentence)
             self.conversation_data.append(conversation)
             sentence = ""
@@ -123,6 +144,8 @@ class TalkOneDay:
         self.strTalkerCount = defaultdict(int)
         # 発話者が使ったスタンプの累計回数
         self.stampTalkerCount = defaultdict(int)
+        # 発話者が送った写真の累計回数
+        self.pictureTalkerCount = defaultdict(int)
         # 発話者が電話をかけた回数
         self.callTalkerCount = defaultdict(int)
         # 発話者が電話をかけて不在着信になった回数
@@ -133,13 +156,18 @@ class TalkOneDay:
         self.linepayTalkerCount = defaultdict(int)
         # 発話者がLINE PAYを送った金額
         self.linepayTalkerMoney = defaultdict(int)
+        # 発話者
+        self.talkerSet = set()
 
         for content in self.conversation_data:
             talker = content.talker
+            self.talkerSet.add(talker)
             self.talkerCount[talker] += 1
             self.strTalkerCount[talker] += content.talk_contents_count
             if content.stamp_flg:
                 self.stampTalkerCount[talker] += 1
+            if content.picture_flg:
+                self.pictureTalkerCount[talker] += 1
             if content.call_flg:
                 self.callTalkerCount[talker] += 1
                 if content.call_time.hour == content.call_time.minute == content.call_time.second == 0:
@@ -151,6 +179,23 @@ class TalkOneDay:
             if content.line_pay_flg:
                 self.linepayTalkerCount[talker] += 1
                 self.linepayTalkerMoney[talker] += content.line_pay_money
+
+    def _sum_data(self):
+        for talker in self.talkerSet:
+            self.talkerCount["all"] += self.talkerCount[talker]
+            self.strTalkerCount["all"] += self.strTalkerCount[talker]
+            self.stampTalkerCount["all"] += self.stampTalkerCount[talker]
+            self.pictureTalkerCount["all"] += self.pictureTalkerCount[talker]
+            self.callTalkerCount["all"] += self.callTalkerCount[talker]
+            self.missed_call_count["all"] += self.missed_call_count[talker]
+            hour, minute, second \
+                = self.call_time[talker].hour, \
+                  self.call_time[talker].minute, \
+                  self.call_time[talker].second
+            self.call_time["all"].add_time(hour, minute, second)
+            self.linepayTalkerCount["all"] += self.linepayTalkerCount[talker]
+            self.linepayTalkerMoney["all"] += self.linepayTalkerMoney[talker]
+
 
 
 class TalkData:
@@ -182,14 +227,18 @@ class TalkData:
     def _extract_talk_data(self):
         head_data = self.talk_data[0].split("\n")
         self.partner = re.match(r"\[LINE\] (.+?)とのトーク履歴$", head_data[0]).group(1)
-        save_date = re.match(r"保存日時：(.+?)$", head_data[1]).group(1)
-        self.save_data = datetime.datetime.strptime(save_date, '%Y/%m/%d %H:%M')
+        save_date = re.match(r"保存日時：(.+?)$", head_data[1]).group(1).split()
+        self.save_day = TimeData()
+        self.save_day.set_day(save_date[0])
+        self.save_day.set_time(save_date[1])
         self.analyse_data = [TalkOneDay(talk_history_one_day) for talk_history_one_day in self.talk_data[1:]]
+        self.start_day = self.analyse_data[0].date
 
     def _extract_talker(self):
         self.talkerSet = set()
         for day_data in self.analyse_data:
             self.talkerSet |= set(day_data.talkerCount.keys())
+        self.talkerSet.discard("all")
 
     def _analyze_all(self):
         # 発話者が何回発話したか(電話含む)
@@ -198,6 +247,8 @@ class TalkData:
         self.strTalkerCount = defaultdict(int)
         # 発話者が使ったスタンプの累計回数
         self.stampTalkerCount = defaultdict(int)
+        # 発話者が送った写真の累計回数
+        self.pictureTalkerCount = defaultdict(int)
         # 発話者が電話をかけた回数
         self.callTalkerCount = defaultdict(int)
         # 発話者が電話をかけて不在着信になった回数
@@ -208,12 +259,15 @@ class TalkData:
         self.linepayTalkerCount = defaultdict(int)
         # 発話者がLINE PAYを送った金額
         self.linepayTalkerMoney = defaultdict(int)
+        # トーク日数
+        self.talkSumDay = len(self.analyse_data)
 
         for day_data in self.analyse_data:
             for talker in self.talkerSet:
                 self.talkerCount[talker] += day_data.talkerCount[talker]
                 self.strTalkerCount[talker] += day_data.strTalkerCount[talker]
                 self.stampTalkerCount[talker] += day_data.stampTalkerCount[talker]
+                self.pictureTalkerCount[talker] += day_data.pictureTalkerCount[talker]
                 self.callTalkerCount[talker] += day_data.callTalkerCount[talker]
                 self.missed_call_count[talker] += day_data.missed_call_count[talker]
                 hour, minute, second \
@@ -228,6 +282,7 @@ class TalkData:
             self.talkerCount["all"] += self.talkerCount[talker]
             self.strTalkerCount["all"] += self.strTalkerCount[talker]
             self.stampTalkerCount["all"] += self.stampTalkerCount[talker]
+            self.pictureTalkerCount["all"] += self.pictureTalkerCount[talker]
             self.callTalkerCount["all"] += self.callTalkerCount[talker]
             self.missed_call_count["all"] += self.missed_call_count[talker]
             hour, minute, second \
@@ -239,14 +294,35 @@ class TalkData:
             self.linepayTalkerMoney["all"] += self.linepayTalkerMoney[talker]
 
 
+def max_str_one_day(talk_data):
+    talk_data.sort(key=lambda x:-x.strTalkerCount["all"])
+    for element in talk_data[:3]:
+        print(f"- 発話文字数: {element.strTalkerCount['all']}, 日時: {element.date.display_day()}")
+    print()
+
+def max_talk_count_one_day(talk_data):
+    talk_data.sort(key=lambda x: -x.talkerCount["all"])
+    for element in talk_data[:3]:
+        print(f"- 発話回数: {element.talkerCount['all']}, 日時: {element.date.display_day()}")
+    print()
+
 def main_process():
     talk_data = TalkData()
-    # pprint(talk_data.talk_data)
-    print("トーク相手: ", talk_data.partner)
-    print("- トーク回数: ", talk_data.talkerCount)
-    print("- 発話文字数: ", talk_data.strTalkerCount)
-    print("- スタンプ回数: ", talk_data.stampTalkerCount)
-    print("- 通話時間: ", talk_data.call_time["all"].display_time())
+    print("トーク相手:", talk_data.partner)
+    print("- 保存日時: ", talk_data.save_day.display_day())
+    print("- トーク開始日", talk_data.start_day.display_day())
+    print("- 経過日数: ", calc_day_elapsed(talk_data.start_day, talk_data.save_day))
+    print("- トーク日数:", talk_data.talkSumDay)
+    print("- トーク回数:", talk_data.talkerCount)
+    print("- 発話文字数:", talk_data.strTalkerCount)
+    print("- 写真送信回数:", talk_data.pictureTalkerCount)
+    print("- スタンプ回数:", talk_data.stampTalkerCount)
+    print("- 通話時間:", talk_data.call_time["all"].display_time())
+    print()
+    print("集計")
+    max_str_one_day(talk_data.analyse_data)
+    max_talk_count_one_day(talk_data.analyse_data)
+
 
 
 def main():
