@@ -2,3 +2,5 @@
 .DS_Store
 line_analysis/talk_data/.DS_Store
 line_analysis/.DS_Store
+*__pycache__*
+
