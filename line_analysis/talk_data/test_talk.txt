@@ -1,5 +1,5 @@
 [LINE] Conversation Partnerとのトーク履歴
-保存日時：2022/01/10 13:29
+保存日時：2021/01/20 13:29
 
 2020/12/09(水)
 22:14	myself	初めまして
@@ -41,3 +41,4 @@ Conversation Partnerが1,130 円相当のLINE Pay残高またはボーナスを�
 14:05	myself	☎ 通話時間 56:02:58
 15:27	myself	LINE Payを送ります
 Conversation Partnerが11,999 円相当のLINE Pay残高またはボーナスを送りました。
+

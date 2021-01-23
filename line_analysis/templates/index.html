@@ -1,0 +1,19 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <link href="/static/css/style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+  <h1>{{ context['talk_partner'] }}さんとの会話（集計日時：{{ context['save_day'] }}）</h1>
+  <main1>累計発話回数：{{ context['sum_talk_count_all'] }}回（平均 {{ context["avg_talk_count_all"] }} 回/日）</main1>
+  <nav1>累計発話文字数：{{ context['sum_talk_str_count_all'] }}文字（平均 {{ context["avg_talk_str_count_all"] }} 文字/日）</nav1>
+  <main2>経過日数：{{ context['passed_day'] }}日（内トークをした日数：{{ context['talk_day_count'] }}日）</main2>
+  <nav2>累計通話時間：{{ context['sum_phone_time_all'] }}</nav2>
+  <main3>1日の最大トーク文字総数：{{ context['max_str_data_one_day'] }}文字（{{ context['max_str_data_one_day_date'] }}）</main3>
+  <nav3>1日の最大トーク総数：{{ context['max_talk_data_one_day'] }}回（{{ context['max_talk_data_one_day_date'] }}）</nav3>
+  <h4>トークを始めた日：{{ context['start_talk_day'] }}</h4>
+</body>
+</html>

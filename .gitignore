@@ -1,6 +1,4 @@
 .idea/
-.DS_Store
-line_analysis/talk_data/.DS_Store
-line_analysis/.DS_Store
+*.DS_Store
 *__pycache__*
-
+line_analysis/talk_data/test2.txt

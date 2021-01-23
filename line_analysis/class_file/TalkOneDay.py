@@ -5,6 +5,9 @@ import re
 from collections import defaultdict
 
 time_pattern = re.compile(r"[0-9]{2}:[0-9]{2}")
+line_pay_pattern = re.compile(r"(.*?)が(.*?) 円相当のLINE Pay残高またはボーナスを送りました。$")
+
+
 class TalkOneDay:
     def __init__(self, talk_history_one_day):
         date_str, talk_history_one_day = talk_history_one_day.split("\n", 1)
