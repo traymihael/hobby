@@ -40,6 +40,7 @@
 <ul>
   <li>誤った操作をすると電卓の下に警告を出す。</li>
   <li>過去3回分の計算結果を表示する。</li>
+  <li>kekka変数は使用しない</li>
 </ul>
 <h4>TODO</h4>
 <ul>
@@ -115,7 +116,6 @@
 </body>
 </html>
 <script type="text/javascript">
-  var kekka = "";
   var mode = "integer_mode";
   var state = 'start';
   var zero_flg = false;
@@ -138,7 +138,6 @@
   function clearText(){
     state = 'start';
     form.text.value = "";
-    kekka = "";
     zero_flg = false;
     mode = "integer_mode";
     erro_message.textContent = "";
@@ -172,27 +171,20 @@
       } else {
         state = 'calculation';
       }
-      if( kekka!="" ){
-        form.text.value = kekka;
-        kekka = "";
-      }
       form.text.value += x;
     }
   }
   function backSpace(){
-    kekka = "";
     form.text.value = form.text.value.substring(0, form.text.value.length - 1);
    }
    function calculate(){
-    if( kekka!="" ) return;
     if(chech_sign()) { // 記号を入れる位置がおかしい
         return;
     }
     input_str = form.text.value.replace("π", "Math.PI")
     input_str = input_str.replace("e", "Math.E")
     input_str = input_str.replace("log", "Math.log")
-    kekka = eval(input_str);
-    form.text.value += "=" + kekka;
+    form.text.value += "=" + eval(input_str);
     printPreCalc()
   }
   function chech_sign() {
@@ -207,12 +199,7 @@
     if(chech_sign()) { // 記号を入れる位置がおかしい
         return;
     }
-    if( kekka!="" ){
-      kekka = Math.sqrt(kekka);
-    }else{
-      kekka = Math.sqrt(eval(form.text.value));
-    }
-    form.text.value = kekka;
+    form.text.value = Math.sqrt(eval(form.text.value));
   }
   function factorial(num) {
    if (num < 2) return 1;
@@ -222,12 +209,7 @@
     if(chech_sign()) { // 記号を入れる位置がおかしい
         return;
     }
-    if( kekka!="" ){
-      kekka = factorial(kekka);
-    }else{
-      kekka = factorial(eval(form.text.value));
-    }
-    form.text.value = kekka;
+    form.text.value = factorial(eval(form.text.value));;
   }
   function keypress(event){
     if(event.keyCode != 0){
@@ -236,8 +218,7 @@
       moji = event.charCode; //Firefox
     }
     if( moji==13 || moji==61 ){ //13:リターンキー 61:イコール(=)
-      kekka = eval(form.text.value);
-      form.text.value += "=" + kekka;
+      form.text.value += "=" + eval(form.text.value);
       printPreCalc()
       return false; //入力文字を追加しないときは false を返す
     }else if( moji==113){ //113:q を押した時ルートの計算を行う
